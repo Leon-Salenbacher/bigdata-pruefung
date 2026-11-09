@@ -1,0 +1,21 @@
+services:
+  xkcd-downloader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    container_name: xkd-downloader
+
+    environment:
+      XKCD_BASE_URL: "https://xkcd.com"
+      XKCD_REQUEST_TIMEOUT: "15"
+      XKCD_REQUEST_DELAY: "0.3"
+      XKCD_MAX_RETRIES: "3"
+      XKCD_START_ID: "1"
+      XKCD_END_ID: "0"
+      XKCD_RAW_DIR: "/app/data/raw"
+
+    volumes:
+      - "./data/raw:/app/data/raw"
+      
+    restart: "no"

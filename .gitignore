@@ -1,0 +1,93 @@
+
+# ===========================
+# Python
+# ===========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# ===========================
+# Environment / Secrets
+# ===========================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ===========================
+# XKCD Data
+# ===========================
+data/raw/
+data/final/
+data/temp/
+
+# Keep data directory
+!data/.gitkeep
+
+# ===========================
+# Hadoop / HDFS
+# ===========================
+hadoop-data/
+hdfs-data/
+namenode/
+datanode/
+
+# ===========================
+# Spark
+# ===========================
+spark-warehouse/
+metastore_db/
+derby.log
+
+# ===========================
+# Airflow
+# ===========================
+airflow/logs/
+airflow/airflow.db
+airflow/airflow.cfg
+airflow/standalone_admin_password.txt
+
+# ===========================
+# Docker
+# ===========================
+docker-data/
+docker-volumes/
+
+# ===========================
+# IDE / Editors
+# ===========================
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# ===========================
+# Testing / Cache
+# ===========================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ===========================
+# Logs
+# ===========================
+*.log
+logs/
+
+# ===========================
+# Operating Systems
+# ===========================
+.DS_Store
+Thumbs.db
+desktop.ini

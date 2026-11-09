@@ -1,0 +1,49 @@
+
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Environment / Secrets
+.env
+.env.*
+!.env.example
+
+# Downloaded XKCD Data
+data/
+
+# IDE
+.vscode/
+.idea/
+
+# Operating Systems
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Documentation
+README.md
+docs/
+
+# Docker
+docker-compose.yml
+compose.yaml
+Dockerfile
+.dockerignore
+
+# Other project components
+frontend/
+dags/
+sql/
