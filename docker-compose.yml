@@ -92,6 +92,93 @@ services:
       - namenode
       - datanode
   
+  # ========================================
+  # XKCD PySpark Transformation
+  # ========================================
+  xkcd-transform:
+    image: apache/spark:3.5.7-python3
+    entrypoint: ["/opt/spark/bin/spark-submit"]
+
+    command: 
+      - "--master"
+      - "local[2]"
+      - "--conf"
+      - "spark.drive.memory=1g"
+      - "--conf"
+      - "spark.sql.shuffle.partitions=4"
+      - "/opt/xkcd/transform.py"
+
+    environment:
+      XKCD_HDFS_RAW_DIR: "hdfs://namenode:8020/user/hadoop/xkcd/raw"
+      XKCD_HDFS_FINAL_DIR: "hdfs://namenode:8020/user/hadoop/xkcd/final"
+    volumes:
+      - "./scripts/transform.py:/opt/xkcd/transform.py:ro"
+    depends_on:
+      - namenode
+      - datanode
+    profiles: ["tools"]
+    restart: "no"
+
+  # ========================================
+  # PostgreSQL Database
+  # ========================================
+  postgres:
+    image: postgres:17
+    hostname: postgres
+
+    environment:
+      POSTGRES_USER: xkcd
+      POSTGRES_PASSWORD: xkcd_dev_password
+      POSTGRES_DB: xkcd
+
+    ports:
+      - "5433:5432"
+    
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./sql/merge_comics.sql:/opt/xkcd/merge_comics.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U xkcd -d xkcd"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+
+  # ========================================
+  # XKCD PostgreSQL Export
+  # ========================================
+  xkcd-postgres-export:
+    image: apache/spark:3.5.7-python3
+    entrypoint: ["/opt/spark/bin/spark-submit"]
+    command:
+      - "--master"
+      - "local[2]"
+      - "--packages"
+      - "org.postgresql:postgresql:42.7.4"
+      - "--conf"
+      - "spark.jars.ivy=/tmp/.ivy2"
+      - "/opt/xkcd/export_postgres.py"
+    environment:
+      XKCD_HDFS_FINAL_DIR: "hdfs://namenode:8020/user/hadoop/xkcd/final"
+      POSTGRES_JDBC_URL: "jdbc:postgresql://postgres:5432/xkcd"
+      POSTGRES_USER: "xkcd"
+      POSTGRES_PASSWORD: "xkcd_dev_password"
+
+    volumes:
+      - ./scripts/export_postgres.py:/opt/xkcd/export_postgres.py:ro
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      namenode:
+        condition: service_started
+      datanode:
+        condition: service_started
+
+    profiles: ["tools"]
+    restart: "no"
 
 # ========================================
 # Persistent Volumes
@@ -99,3 +186,4 @@ services:
 volumes:
   namenode_data:
   datanode_data:
+  postgres_data:
