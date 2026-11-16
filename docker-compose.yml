@@ -180,6 +180,25 @@ services:
     profiles: ["tools"]
     restart: "no"
 
+  # ========================================
+  # XKCD Search API
+  # ========================================
+  xkcd-api:
+    build:
+      context: ./backend
+
+    environment:
+      DATABASE_URL: "postgresql://xkcd:xkcd_dev_password@postgres:5432/xkcd"
+
+    ports:
+      - "127.0.0.1:8000:8000"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    restart: unless-stopped
+
 # ========================================
 # Persistent Volumes
 # ========================================
