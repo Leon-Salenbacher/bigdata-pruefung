@@ -1,5 +1,5 @@
 # Aufgaben
-- [ ] XKCD Daten laden
+- [x] XKCD Daten laden
 - [ ] Daten in HDFS speichern
 - [ ] Daten verarbeiten (Hive, spark, Pyspark) 
 - [ ] Daten aufbereiten

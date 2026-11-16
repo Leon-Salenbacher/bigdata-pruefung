@@ -1,4 +1,7 @@
 services:
+  # ========================================
+  # XKCD Downloader
+  # ========================================
   xkcd-downloader:
     build:
       context: .
@@ -19,3 +22,80 @@ services:
       - "./data/raw:/app/data/raw"
       
     restart: "no"
+    profiles: ["download"]
+
+
+
+  # ========================================
+  # Hadoop HDFS NameNode
+  # ========================================
+  namenode:
+    image: apache/hadoop:3.4.3
+    hostname: namenode
+    command: ["hdfs", "namenode"]
+
+    environment:
+      CORE-SITE.XML_fs.defaultFS: "hdfs://namenode:8020"
+      HDFS-SITE.XML_dfs.namenode.rpc-address: "namenode:8020"
+      HDFS-SITE.XML_dfs.namenode.name.dir: "file:///tmp/hadoop-root/dfs/name"
+      HDFS-SITE.XML_dfs.replication: "1"
+      HDFS-SITE.XML_dfs.permissions.enabled: "false"
+
+      ENSURE_NAMENODE_DIR: /tmp/hadoop-root/dfs/name
+    ports:
+      - "9870:9870"
+    volumes:
+      - namenode_data:/tmp/hadoop-root/dfs/name    
+    restart: unless-stopped
+
+  # ========================================
+  # Hadoop HDFS DataNode
+  # ========================================
+  datanode:
+    image: apache/hadoop:3.4.3
+    hostname: datanode
+    command: ["hdfs", "datanode"]
+    environment:
+      CORE-SITE.XML_fs.defaultFS: "hdfs://namenode:8020"
+      HDFS-SITE.XML_dfs.namenode.rpc-address: "namenode:8020"
+      HDFS-SITE.XML_dfs.replication: "1"
+      HDFS-SITE.XML_dfs.permissions.enabled: "false"
+      HDFS-SITE.XML_dfs.datanode.data.dir: "file:///tmp/hadoop-root/dfs/data"
+    volumes:
+      - datanode_data:/tmp/hadoop-root/dfs/data
+    depends_on:
+      - namenode
+    restart: unless-stopped
+
+
+  # ========================================
+  # XKCD HDFS Import
+  # ========================================
+  hdfs-import:
+    image: apache/hadoop:3.4.3
+    command: ["bash", "/opt/xkcd/import_hdfs.sh"]
+
+    environment:
+      CORE-SITE.XML_fs.defaultFS: "hdfs://namenode:8020"
+      HDFS-SITE.XML_dfs.namenode.rpc-address: "namenode:8020"
+      HDFS-SITE.XML_dfs.replication: "1"
+      HDFS-SITE.XML_dfs.permissions.enabled: "false"
+
+      XKCD_HDFS_RAW_DIR: "/user/hadoop/xkcd/raw"
+      XKCD_LOCAL_RAW_DIR: "/data/raw"
+    volumes:
+      - "./data/raw:/data/raw:ro"
+      - "./scripts/import_hdfs.sh:/opt/xkcd/import_hdfs.sh:ro"
+    profiles: ["tools"]
+    restart: "no"
+    depends_on:
+      - namenode
+      - datanode
+  
+
+# ========================================
+# Persistent Volumes
+# ========================================
+volumes:
+  namenode_data:
+  datanode_data:
