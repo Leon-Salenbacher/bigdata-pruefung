@@ -103,7 +103,7 @@ services:
       - "--master"
       - "local[2]"
       - "--conf"
-      - "spark.drive.memory=1g"
+      - "spark.driver.memory=1g"
       - "--conf"
       - "spark.sql.shuffle.partitions=4"
       - "/opt/xkcd/transform.py"
@@ -181,9 +181,9 @@ services:
     restart: "no"
 
   # ========================================
-  # XKCD Search API
+  # Backend - XKCD Search API
   # ========================================
-  xkcd-api:
+  backend:
     build:
       context: ./backend
 
@@ -197,6 +197,20 @@ services:
       postgres:
         condition: service_healthy
 
+    restart: unless-stopped
+
+    
+  # ========================================
+  # Frontend
+  # ========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:3000:80"
+    depends_on:
+      - backend
     restart: unless-stopped
 
 # ========================================
