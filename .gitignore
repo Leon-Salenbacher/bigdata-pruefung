@@ -91,3 +91,9 @@ logs/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+
+# ===========================
+# frontend
+# ===========================
+*/node_modules/*
