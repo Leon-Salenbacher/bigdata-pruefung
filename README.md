@@ -89,7 +89,7 @@ Die Transformation umfasst dabei die folgenden Schritte:
 Nach der Transformation enthält jeder Comic einen strukturierten Datensatz mit den folgenden Attributen:
 
 | Attribute | Datentyp | Beschreibung |
-
+| --- | --- | --- |
 | id | Integer | Endeutige Comic-ID | 
 | title | String | Titel des Comics | 
 | safe_title | String  | Bereinigter Titel | 
@@ -257,6 +257,7 @@ Dabei werden unteranderem diese Informationen angezeigt:
 Die XKCD Search Engine besteht aus mehreren Komponenten, welche gemeinsam die automatisierte Verarbeitung und Bereitstellung der Comic Daten ermöglichen. 
 
 | Komponente | Technologie | Aufgabe | 
+| --- | --- | --- |
 | Datenquelle | XKCD API | Bereitstellung der ursprünglichen Comic-Daten |
 | Datenextraktion | Python | Automatisierter Download der JSON-Dokumente |
 | Raw Layer | Hadoop HDFS | Speicherung der ursprünglichen JSON-Daten |
@@ -275,6 +276,7 @@ Der ETL-Workflow wurde mithilfe von Apache Airflow automatisiert. Airflow ermög
 Die Pipeline wird in mehreren aufeinanderfolgende Tasks aufgeteilt.
 
 | Task | Beschreibung |
+| --- | --- | 
 | extract_xkcd | Herunterladen der Comic-Daten über die XKCD-API |
 | transform_xkcd | Verarbeitung und Bereinigung der Rohdaten mit PySpark |
 | load_postgresql | Übertragung der aufbereiteten Daten in die PostgreSQL-Datenbank |
