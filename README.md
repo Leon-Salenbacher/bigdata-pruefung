@@ -269,5 +269,17 @@ Die XKCD Search Engine besteht aus mehreren Komponenten, welche gemeinsam die au
 | Orchestrierung | Apache Airflow | Automatisierte Ausführung des ETL-Workflows |
 
 ### 9. Ablauf der Pipeline
+Der ETL-Workflow wurde mithilfe von Apache Airflow automatisiert. Airflow ermöglicht es hierbei die Definition und Ausführung einzelner Verarbeitungsschritte sowie deren Zeitlichen und logischen Abhängigkeiten.
 
-### 10. Ergebnis
+#### 9.1 Aufbau des Airflow-DAGs
+Die Pipeline wird in mehreren aufeinanderfolgende Tasks aufgeteilt.
+
+| Task | Beschreibung |
+| extract_xkcd | Herunterladen der Comic-Daten über die XKCD-API |
+| transform_xkcd | Verarbeitung und Bereinigung der Rohdaten mit PySpark |
+| load_postgresql | Übertragung der aufbereiteten Daten in die PostgreSQL-Datenbank |
+
+Diese Tasks werden dabei in einer festgelegten Reihenfolge ausgeführt:
+
+extract_xkcd -> transform_xkcd -> load_postgresql
+
