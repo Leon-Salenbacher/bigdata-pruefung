@@ -18,8 +18,7 @@ with DAG(
         task_id = "download",
         cwd=REPO_DIR,
         bash_command=(
-            f"{COMPOSE} --profile download run --rm -T "
-            "-e XKCD_START_ID=1 -e XKCD_END_ID=10 xkcd-downloader"
+            f"{COMPOSE} --profile download run --rm -T xkcd-downloader"
         )
     )
 

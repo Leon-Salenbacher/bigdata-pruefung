@@ -36,6 +36,10 @@ In der Airflow-Oberfläche:
 Airflow führt die folgenden Schritte automatisch nacheinander aus:
 ``download -> import_hdfs -> transform -> export_postgres -> merge_comics`
 
+Der Download lädt alle Comics von ID 1 bis zur aktuell höchsten ID
+(`XKCD_END_ID=0` in `docker-compose.yml`). Bereits lokal vorhandene Comics
+werden übersprungen; nicht vorhandene IDs (HTTP 404) werden protokolliert.
+
 ### 4. Suchfunktion
 Im Frontend `http://localhost:3000` können jetzt suchen durchgeführt werden.
 
