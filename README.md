@@ -1,9 +1,10 @@
 # Big Data Practical Exam - XKCD Search Engine
 
 ## Information zur KI Nutzung
-| Werkzeug | Beschreibung der Nutzung | 
-| ChatGPT | Recherche und unterstützung bei der informations |
-| ChatGPT Codex | Unterstützung bei bug fixes |
+| Werkzeug | Beschreibung der Nutzung |
+| --- | --- |
+| ChatGPT | Recherche und Unterstützung bei der Informationsaufbereitung |
+| ChatGPT Codex | Unterstützung bei Fehleranalyse, Fehlerbehebung und Dokumentation |
 
 ## Demo
 
