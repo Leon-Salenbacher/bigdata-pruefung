@@ -240,9 +240,7 @@ ON comics
 USING GIN (
     to_tsvector(
         'english',
-        coalesce(title, '') || ' ' ||
-        coalesce(alt, '') || ' ' ||
-        coalesce(transcript, '')
+        coalesce(search_text, '')
     )
 );
 ```
