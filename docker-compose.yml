@@ -22,9 +22,22 @@ services:
   # ========================================
   # Hadoop HDFS NameNode
   # ========================================
+  hdfs-init:
+    image: apache/hadoop:3.4.3
+    user: "0:0"
+    entrypoint: ["bash", "-c"]
+    command: ["chown -R 1000:100 /hdfs/name /hdfs/data"]
+    volumes:
+      - namenode_data:/hdfs/name
+      - datanode_data:/hdfs/data
+    restart: "no"
+
   namenode:
     image: apache/hadoop:3.4.3
     hostname: namenode
+    depends_on:
+      hdfs-init:
+        condition: service_completed_successfully
     command: ["hdfs", "namenode"]
     environment:
       CORE-SITE.XML_fs.defaultFS: "hdfs://namenode:8020"
@@ -45,6 +58,11 @@ services:
   datanode:
     image: apache/hadoop:3.4.3
     hostname: datanode
+    depends_on:
+      hdfs-init:
+        condition: service_completed_successfully
+      namenode:
+        condition: service_started
     command: ["hdfs", "datanode"]
     environment:
       CORE-SITE.XML_fs.defaultFS: "hdfs://namenode:8020"
@@ -54,8 +72,6 @@ services:
       HDFS-SITE.XML_dfs.datanode.data.dir: "file:///tmp/hadoop-root/dfs/data"
     volumes:
       - datanode_data:/tmp/hadoop-root/dfs/data
-    depends_on:
-      - namenode
     restart: unless-stopped
 
   # ========================================
