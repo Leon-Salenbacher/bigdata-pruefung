@@ -277,21 +277,7 @@ Die eigentliche Volltextsuche wird hierbei durch PostgreSQL durchgeführt. FastA
 
 #### 6.2 Rückgabe der Suchergebnisse 
 Die in der Volltextsuche gefundenen Comics werden in einem JSON-Format an das Frontend zurückgegeben.
-Eine beispielhafte Antwort könnte dabei so aussehen:
-```
-{
-  "results": [
-    {
-      "id": 2054,
-      "title": "Data Pipeline",
-      "release_date": "2018-10-03",
-      "alt": "Is the pipeline literally running...",
-      "image_url": "https://imgs.xkcd.com/comics/data_pipeline.png",
-      "comic_url": "https://xkcd.com/2054/"
-    }
-  ]
-}
-```
+Die Antwort enthält `query`, `page`, `limit`, `total` und die Liste `results`. Jeder Treffer enthält `id`, `title`, `alt`, `image_url`, `comic_url`, `year`, `month`, `day` und `relevance`.
 
 Durch die verwendung von JSON wird eine einfache weiterverarbeitung der Daten durch das React-Frontend ermöglicht. Zusätzlich ermöglicht die Trennung von Backend und Frontend die unabhängige weiterentwicklung der API und der Benutzerobefläche oder die integration in eine andere Anwendung. 
 
