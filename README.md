@@ -1,9 +1,10 @@
 # Big Data Practical Exam - XKCD Search Engine
 
 ## Information zur KI Nutzung
-| Werkzeug | Beschreibung der Nutzung | 
-| ChatGPT | Recherche und unterstützung bei der informations |
-| ChatGPT Codex | Unterstützung bei bug fixes |
+| Werkzeug | Beschreibung der Nutzung |
+| --- | --- |
+| ChatGPT | Recherche und Unterstützung bei der Informationsaufbereitung |
+| ChatGPT Codex | Unterstützung bei Fehleranalyse, Fehlerbehebung und Dokumentation |
 
 ## Demo
 
@@ -13,7 +14,7 @@ docker compose --profile web --profile airflow up -d --build
 ```
 
 
-Damit werden HDFS, PostgreSQL, das FastAPI-Backend und das React-Frontend gestartet.
+Damit werden HDFS, PostgreSQL, Airflow, das FastAPI-Backend und das React-Frontend gestartet. Die ETL-Pipeline startet erst durch das manuelle Auslösen des DAGs.
 
 
 ### 2. Bei Airflow anmelden
@@ -71,8 +72,8 @@ Ziel des Projektes ist es eine durchsuchbare Datenbank für XKCD-Comics aufzubau
 
 Die aufbereiteten Daten werden anschließend durch eine FastAPI-Anwendung bereitgestellt. Ein React-Frontend ermöglicht es dann dem Nutzer, die gespeicherten Comics über eine Volltextsuche zu durchsuchen und die Ergebnisse anzuzeigen.
 
-Somit besteht der vollständige Datenfulls aus den folgenden Komponenten:
-XKCD API -> HDFS Raw Layer -> PySpark Transformation -> HDFS Final Layer -> PostgreSQL -> FastAPI -> React Frontend
+Somit besteht der vollständige Datenfluss aus den folgenden Komponenten:
+XKCD API -> lokale JSON-Dateien -> HDFS Raw Layer -> PySpark Transformation -> HDFS Final Layer -> PostgreSQL -> FastAPI -> React Frontend
 
 ### 2. Datenquelle
 Als Datenquelle wird die öffetnliche JSON-Schnittstelle von XKCD verwendet.
@@ -98,7 +99,7 @@ Aufgrund der tatsache, dass die API selbst keinen Endpunkt zum Abruf aller Comic
 
 ### 3. ETL-Workflow
 #### 3.1 Extract - Herunterladen der XKCD-Daten
-Im ersten Schritt des ETL-Workflows werden die Comic-Daten über die öffentliche XKCD-APIabgerufen und im Raw Layer des Hadoop Distributed File Systems (HDFS) gespeichert.
+Im ersten Schritt des ETL-Workflows werden die Comic-Daten über die öffentliche XKCD-API abgerufen und zunächst lokal unter `data/raw/<Jahr>/<ID>.json` gespeichert. Erst der separate Task `import_hdfs` kopiert diese Dateien in den HDFS Raw Layer.
 
 Da die XKCD-API selbst keinen Endpunkt zum Abrufen aller Comics bereitstellt, wird der Download durch die fortlaufenden Comic-IDs realisiert.
 
@@ -112,13 +113,13 @@ Der Download erfolgt dabei mithilfe eines Python-Skripts, welches dabei die folg
 2. Iterieren über sämtliche Comic-IDs.
 3. Abrufen der zugehörigen JSON-Dokumente über HTTP-GET-Requests.
 4. Überprüfen der HTTP-Antworten und Behandlung möglicher Fehler .
-5. Speichern der erfolgreich abgerufenen JSON-Dokumente im HDFS.
+5. Speichern der erfolgreich abgerufenen JSON-Dokumente unter `data/raw/<Jahr>/`.
 
 Da nicht sichergestellt ist, das jede Comic-ID existiert, werden die HTTP-404-Antworten im skript berücksichtigt. Die aufgetretenen Fehlerhaften Requests, werden dabei Protokoliert und können im späteren verlauf nachvollzogen werden.
 
 
-Speicherung im HDFS Raw Layer 
-Die heruntergeladenen JSON-Dokumente werden anschließend vorerst im Raw Layer gespeichert. Somit können die ursprünglichen Daten erhalten bleiben und bei Bedarf erneut verarbeitet werden. 
+Speicherung im HDFS Raw Layer
+Der Task `import_hdfs` kopiert die lokal heruntergeladenen JSON-Dokumente in den HDFS Raw Layer. Er wartet dafür auf einen aktiven DataNode und das Ende des HDFS Safe Mode. Somit können die ursprünglichen Daten erhalten bleiben und bei Bedarf erneut verarbeitet werden.
 Die Speicherung erfolgt im anschluss anhand des Erscheinungsjahrs der einzelnen Comics.
 Eine Beispielhafte Verzeichnisstruktur könnte dabei folgender maßen aussehen:
 ```
@@ -136,14 +137,14 @@ Eine Beispielhafte Verzeichnisstruktur könnte dabei folgender maßen aussehen:
 Das jeweilige Erscheindungsjahr wird dabei aus dem Feld 'year' des jeweiligen JSON-Dokuemnts extrahiert.
 
 #### 3.2 Transform - Verarbeitung mit Apache Spark
-Im zweiten Schritt werden die gespeicherten Rohdaten von Apache Spark und dessen Python Schnittstelle PySpark verarbeitet.
+Im dritten DAG-Task (`transform`) werden die gespeicherten Rohdaten von Apache Spark und dessen Python Schnittstelle PySpark verarbeitet.
 Ziel bei dieser Transformation ist es, die ursprünglichen JSON-Dokumente in eine bereinigte und strukturierte Form zu übersetzen, die im späteren verlauf für die Volltextsuche verwendet werden kann.
 
 Für diesen Schritt weden die JSON-Dateien aus dem Raw Layer eingelesen und in einen Spark DataFrame umgewandelt.
 
 Die Transformation umfasst dabei die folgenden Schritte:
 1. Auswahl relevanter Attribute: Aus den JSON-Dokumenten werden die für die Suche und Darstellung benötigten Informationen extrahiert.
-2. Datentypkonvertierung: Das Erscheindungsdatum wird aus den Feldern 'year', 'month' und 'day' zusammengesetzt und in ein Datumstyp umgewandelt.
+2. Datentypkonvertierung: Comic-ID sowie `year`, `month` und `day` werden in Ganzzahlen umgewandelt. Ein separates Datumsfeld wird nicht erzeugt.
 3. Datenbereinigung: Fehlende oder leere Werte werden behandelt, um eine konsistete Datenstruktur sicherzustellen.
 4. Deduplizierung: Mögliche doppelte Einträge werden durch die eindeutige Comic-ID identifiziert und entfernt.
 5. Anreicherung: Auf basis der Comic-ID wird die URL zur jeweiligen XKCD-Webseite generiert.
@@ -154,14 +155,15 @@ Nach der Transformation enthält jeder Comic einen strukturierten Datensatz mit 
 
 | Attribute | Datentyp | Beschreibung |
 | --- | --- | --- |
-| id | Integer | Endeutige Comic-ID | 
-| title | String | Titel des Comics | 
-| safe_title | String  | Bereinigter Titel | 
-| release_date | Date | Erscheinungsdatum | 
-| alt | String | Alternativtext | 
-| transcript | String | Transkript des Comics | 
-| image_url | String | URL des Comic-Bildes | 
-| comic_url | String | URL zur XKCD-Webseite | 
+| id | Integer | Endeutige Comic-ID |
+| title | String | Titel des Comics |
+| safe_title | String  | Bereinigter Titel |
+| year, month, day | Integer | Bestandteile des Erscheinungsdatums |
+| search_text | String | Kleingeschriebener Suchtext aus Titel, Alternativtext und Transkript |
+| alt | String | Alternativtext |
+| transcript | String | Transkript des Comics |
+| image_url | String | URL des Comic-Bildes |
+| comic_url | String | URL zur XKCD-Webseite |
 
 Diese bereitstellung eines einheitlichen Datenmodells, vereinfacht die spätere übertragung in die PostgreSQL-Datenbank.
 
@@ -212,11 +214,14 @@ CREATE TABLE comics (
     id INTEGER PRIMARY KEY,
     title TEXT,
     safe_title TEXT,
-    release_date DATE,
+    year INTEGER,
+    month INTEGER,
+    day INTEGER,
     alt TEXT,
     transcript TEXT,
     image_url TEXT,
-    comic_url TEXT
+    comic_url TEXT,
+    search_text TEXT
 );
 ```
 
@@ -235,9 +240,7 @@ ON comics
 USING GIN (
     to_tsvector(
         'english',
-        coalesce(title, '') || ' ' ||
-        coalesce(alt, '') || ' ' ||
-        coalesce(transcript, '')
+        coalesce(search_text, '')
     )
 );
 ```
@@ -274,23 +277,15 @@ Die eigentliche Volltextsuche wird hierbei durch PostgreSQL durchgeführt. FastA
 
 #### 6.2 Rückgabe der Suchergebnisse 
 Die in der Volltextsuche gefundenen Comics werden in einem JSON-Format an das Frontend zurückgegeben.
-Eine beispielhafte Antwort könnte dabei so aussehen:
-```
-{
-  "results": [
-    {
-      "id": 2054,
-      "title": "Data Pipeline",
-      "release_date": "2018-10-03",
-      "alt": "Is the pipeline literally running...",
-      "image_url": "https://imgs.xkcd.com/comics/data_pipeline.png",
-      "comic_url": "https://xkcd.com/2054/"
-    }
-  ]
-}
-```
+Die Antwort enthält `query`, `page`, `limit`, `total` und die Liste `results`. Jeder Treffer enthält `id`, `title`, `alt`, `image_url`, `comic_url`, `year`, `month`, `day` und `relevance`.
 
-Durch die verwendung von JSON wird eine einfache weiterverarbeitung der Daten durch das React-Frontend ermöglicht. Zusätzlich ermöglicht die Trennung von Backend und Frontend die unabhängige weiterentwicklung der API und der Benutzerobefläche oder die integration in eine andere Anwendung. 
+Weitere Endpunkte:
+
+| Endpunkt | Zweck |
+| --- | --- |
+| `GET /api/health` | Prüft die Datenbankverbindung |
+| `GET /api/comics/search?q=data&page=1&limit=20` | Volltextsuche mit Seitennavigation |
+| `GET /api/comics/{comic_id}` | Einzelnen Comic abrufen; 404 bei fehlender ID |
 
 
 ### 7. Frontend - React
