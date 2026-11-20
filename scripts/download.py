@@ -130,15 +130,16 @@ def main() -> None:
                     error
                 )
 
+            finally:
                 time.sleep(REQUEST_DELAY)
 
-            log.info("Fertig: %d heruntergeladen, " 
-                     "%d überspringen, %d Fehler",
-                     downloaded,
-                     skipped,
-                     failed)
-            if failed:
-                raise SystemExit(1)
+        log.info("Fertig: %d heruntergeladen, "
+                 "%d überspringen, %d Fehler",
+                 downloaded,
+                 skipped,
+                 failed)
+        if failed:
+            raise SystemExit(1)
 
 if __name__ == "__main__":
     main()

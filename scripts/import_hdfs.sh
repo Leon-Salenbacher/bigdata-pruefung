@@ -15,18 +15,19 @@ ready=0
 
 for attempt in $(seq 1 60); do
     if hdfs dfsadmin -report 2>/dev/null | \
-        grep -Eq 'Live datanodes \([1-9][0-9]*\):'; then
+        grep -Eq 'Live datanodes \([1-9][0-9]*\):' &&
+        hdfs dfsadmin -safemode get 2>/dev/null | grep -q 'Safe mode is OFF'; then
             ready=1
             break
     fi
 
-    echo "Waiting for NameNode/DataNode ($attempt/60) ..."
+    echo "Waiting for live DataNode and HDFS safe mode OFF ($attempt/60) ..."
     sleep 2
 done
 
 
 if [[ "$ready" -ne 1 ]]; then
-    echo "Error: No active DataNode found." >&2
+    echo "Error: HDFS not ready (requires a live DataNode and safe mode OFF)." >&2
     exit 1
 fi
 

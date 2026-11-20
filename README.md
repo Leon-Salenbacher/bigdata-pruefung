@@ -1,6 +1,70 @@
-# Big Data Practical Exam
+# Big Data Practical Exam - XKCD Search Engine
 
-## XKCD Search Engine
+## Information zur KI Nutzung
+| Werkzeug | Beschreibung der Nutzung | 
+| ChatGPT | Recherche und unterstützung bei der informations |
+| ChatGPT Codex | Unterstützung bei bug fixes |
+
+## Demo
+
+### 1. Alle Dienste starten
+```powershell
+docker compose --profile web --profile airflow up -d --build
+```
+
+
+Damit werden HDFS, PostgreSQL, das FastAPI-Backend und das React-Frontend gestartet.
+
+
+### 2. Bei Airflow anmelden
+Airflow unter ```http://localhost:8080``` öffnen.
+
+Benutzername: `admin`
+passwort: automatisch erzeugt => auslesen
+```powershell
+docker compose exec airflow python -c "import json; print(json.load(open('/opt/airflow/simple_auth_manager_passwords.json.generated'))['admin'])"
+```
+
+Falls Airflow noch nicht bereit ist, die Startlogs prüfen:
+
+```powershell
+docker compose logs --tail 100 airflow
+```
+
+
+### 3. Datenpipeline starten
+In der Airflow-Oberfläche:
+1. Den DAG `xkcd_pipeline` öffnen
+2. Den DAG ggf. aktivieren
+3. Über **Trigger DAG** durchlauf starten.
+
+Airflow führt die folgenden Schritte automatisch nacheinander aus:
+``download -> import_hdfs -> transform -> export_postgres -> merge_comics`
+
+Der Download lädt alle Comics von ID 1 bis zur aktuell höchsten ID
+(`XKCD_END_ID=0` in `docker-compose.yml`). Bereits lokal vorhandene Comics
+werden übersprungen; nicht vorhandene IDs (HTTP 404) werden protokolliert.
+
+### 4. Suchfunktion
+Im Frontend `http://localhost:3000` können jetzt suchen durchgeführt werden.
+
+Andere Oberflächen:
+* Airflow: `http://localhost:8080`
+* API-Dokumentation: `http://localhost:8000/docs`
+* HDFS NameNode: `http://localhost:9870`
+
+
+### 5. Demo beenden
+```powershell
+docker compose --profile web --profile airflow down
+```
+
+
+
+
+
+
+## DOKU
 
 ### 1. Ziel des Projekts
 Ziel des Projektes ist es eine durchsuchbare Datenbank für XKCD-Comics aufzubauen. Dafür werden die öffentlich verfügbaren Daten der XKCD-API automatisiert heruntergeladen, in einem Hadoop Distributed File System (HDFS) gespeichert, mit Apache Spark verarbeitet und anschließend in eine PostgreSQL-Datenbank übertragen.
