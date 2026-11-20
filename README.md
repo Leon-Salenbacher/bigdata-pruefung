@@ -14,7 +14,7 @@ docker compose --profile web --profile airflow up -d --build
 ```
 
 
-Damit werden HDFS, PostgreSQL, das FastAPI-Backend und das React-Frontend gestartet.
+Damit werden HDFS, PostgreSQL, Airflow, das FastAPI-Backend und das React-Frontend gestartet. Die ETL-Pipeline startet erst durch das manuelle Auslösen des DAGs.
 
 
 ### 2. Bei Airflow anmelden
@@ -72,8 +72,8 @@ Ziel des Projektes ist es eine durchsuchbare Datenbank für XKCD-Comics aufzubau
 
 Die aufbereiteten Daten werden anschließend durch eine FastAPI-Anwendung bereitgestellt. Ein React-Frontend ermöglicht es dann dem Nutzer, die gespeicherten Comics über eine Volltextsuche zu durchsuchen und die Ergebnisse anzuzeigen.
 
-Somit besteht der vollständige Datenfulls aus den folgenden Komponenten:
-XKCD API -> HDFS Raw Layer -> PySpark Transformation -> HDFS Final Layer -> PostgreSQL -> FastAPI -> React Frontend
+Somit besteht der vollständige Datenfluss aus den folgenden Komponenten:
+XKCD API -> lokale JSON-Dateien -> HDFS Raw Layer -> PySpark Transformation -> HDFS Final Layer -> PostgreSQL -> FastAPI -> React Frontend
 
 ### 2. Datenquelle
 Als Datenquelle wird die öffetnliche JSON-Schnittstelle von XKCD verwendet.
@@ -99,7 +99,7 @@ Aufgrund der tatsache, dass die API selbst keinen Endpunkt zum Abruf aller Comic
 
 ### 3. ETL-Workflow
 #### 3.1 Extract - Herunterladen der XKCD-Daten
-Im ersten Schritt des ETL-Workflows werden die Comic-Daten über die öffentliche XKCD-APIabgerufen und im Raw Layer des Hadoop Distributed File Systems (HDFS) gespeichert.
+Im ersten Schritt des ETL-Workflows werden die Comic-Daten über die öffentliche XKCD-API abgerufen und zunächst lokal unter `data/raw/<Jahr>/<ID>.json` gespeichert. Erst der separate Task `import_hdfs` kopiert diese Dateien in den HDFS Raw Layer.
 
 Da die XKCD-API selbst keinen Endpunkt zum Abrufen aller Comics bereitstellt, wird der Download durch die fortlaufenden Comic-IDs realisiert.
 
