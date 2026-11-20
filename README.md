@@ -213,11 +213,14 @@ CREATE TABLE comics (
     id INTEGER PRIMARY KEY,
     title TEXT,
     safe_title TEXT,
-    release_date DATE,
+    year INTEGER,
+    month INTEGER,
+    day INTEGER,
     alt TEXT,
     transcript TEXT,
     image_url TEXT,
-    comic_url TEXT
+    comic_url TEXT,
+    search_text TEXT
 );
 ```
 
