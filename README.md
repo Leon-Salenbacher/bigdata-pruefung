@@ -1,6 +1,18 @@
-# Big Data Practical Exam
+# Big Data Practical Exam - XKCD Search Engine
 
-## XKCD Search Engine
+## DEMO 
+```
+docker compose --profile web up -d --wait
+
+docker compose run --rm -e XKCD_START_ID=1 -e XKCD_END_ID=10 xkcd-downloader
+docker compose run --rm hdfs-import
+docker compose run --rm xkcd-transform
+docker compose run --rm xkcd-postgres-export
+docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U xkcd -d xkcd < sql/merge_comics.sql
+```
+
+
+## DOKU
 
 ### 1. Ziel des Projekts
 Ziel des Projektes ist es eine durchsuchbare Datenbank für XKCD-Comics aufzubauen. Dafür werden die öffentlich verfügbaren Daten der XKCD-API automatisiert heruntergeladen, in einem Hadoop Distributed File System (HDFS) gespeichert, mit Apache Spark verarbeitet und anschließend in eine PostgreSQL-Datenbank übertragen.

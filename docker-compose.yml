@@ -6,9 +6,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    
-    container_name: xkd-downloader
-
     environment:
       XKCD_BASE_URL: "https://xkcd.com"
       XKCD_REQUEST_TIMEOUT: "15"
@@ -17,14 +14,10 @@ services:
       XKCD_START_ID: "1"
       XKCD_END_ID: "0"
       XKCD_RAW_DIR: "/app/data/raw"
-
     volumes:
       - "./data/raw:/app/data/raw"
-      
     restart: "no"
     profiles: ["download"]
-
-
 
   # ========================================
   # Hadoop HDFS NameNode
@@ -33,17 +26,15 @@ services:
     image: apache/hadoop:3.4.3
     hostname: namenode
     command: ["hdfs", "namenode"]
-
     environment:
       CORE-SITE.XML_fs.defaultFS: "hdfs://namenode:8020"
       HDFS-SITE.XML_dfs.namenode.rpc-address: "namenode:8020"
       HDFS-SITE.XML_dfs.namenode.name.dir: "file:///tmp/hadoop-root/dfs/name"
       HDFS-SITE.XML_dfs.replication: "1"
       HDFS-SITE.XML_dfs.permissions.enabled: "false"
-
       ENSURE_NAMENODE_DIR: /tmp/hadoop-root/dfs/name
     ports:
-      - "9870:9870"
+      - "127.0.0.1:9870:9870"
     volumes:
       - namenode_data:/tmp/hadoop-root/dfs/name    
     restart: unless-stopped
@@ -67,20 +58,17 @@ services:
       - namenode
     restart: unless-stopped
 
-
   # ========================================
   # XKCD HDFS Import
   # ========================================
   hdfs-import:
     image: apache/hadoop:3.4.3
     command: ["bash", "/opt/xkcd/import_hdfs.sh"]
-
     environment:
       CORE-SITE.XML_fs.defaultFS: "hdfs://namenode:8020"
       HDFS-SITE.XML_dfs.namenode.rpc-address: "namenode:8020"
       HDFS-SITE.XML_dfs.replication: "1"
       HDFS-SITE.XML_dfs.permissions.enabled: "false"
-
       XKCD_HDFS_RAW_DIR: "/user/hadoop/xkcd/raw"
       XKCD_LOCAL_RAW_DIR: "/data/raw"
     volumes:
@@ -98,7 +86,6 @@ services:
   xkcd-transform:
     image: apache/spark:3.5.7-python3
     entrypoint: ["/opt/spark/bin/spark-submit"]
-
     command: 
       - "--master"
       - "local[2]"
@@ -107,7 +94,6 @@ services:
       - "--conf"
       - "spark.sql.shuffle.partitions=4"
       - "/opt/xkcd/transform.py"
-
     environment:
       XKCD_HDFS_RAW_DIR: "hdfs://namenode:8020/user/hadoop/xkcd/raw"
       XKCD_HDFS_FINAL_DIR: "hdfs://namenode:8020/user/hadoop/xkcd/final"
@@ -125,15 +111,12 @@ services:
   postgres:
     image: postgres:17
     hostname: postgres
-
     environment:
       POSTGRES_USER: xkcd
       POSTGRES_PASSWORD: xkcd_dev_password
       POSTGRES_DB: xkcd
-
     ports:
       - "5433:5432"
-    
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -144,7 +127,6 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
-
 
   # ========================================
   # XKCD PostgreSQL Export
@@ -165,10 +147,8 @@ services:
       POSTGRES_JDBC_URL: "jdbc:postgresql://postgres:5432/xkcd"
       POSTGRES_USER: "xkcd"
       POSTGRES_PASSWORD: "xkcd_dev_password"
-
     volumes:
       - ./scripts/export_postgres.py:/opt/xkcd/export_postgres.py:ro
-
     depends_on:
       postgres:
         condition: service_healthy
@@ -176,7 +156,6 @@ services:
         condition: service_started
       datanode:
         condition: service_started
-
     profiles: ["tools"]
     restart: "no"
 
@@ -186,20 +165,16 @@ services:
   backend:
     build:
       context: ./backend
-
     environment:
       DATABASE_URL: "postgresql://xkcd:xkcd_dev_password@postgres:5432/xkcd"
-
     ports:
       - "127.0.0.1:8000:8000"
-
+    profiles: ["web"]
     depends_on:
       postgres:
         condition: service_healthy
-
     restart: unless-stopped
 
-    
   # ========================================
   # Frontend
   # ========================================
@@ -209,14 +184,31 @@ services:
       dockerfile: Dockerfile
     ports:
       - "127.0.0.1:3000:80"
+    profiles: ["web"]
     depends_on:
       - backend
     restart: unless-stopped
+
+  # ========================================
+  # ETL-Tool | Airflow
+  # ========================================
+  airflow:
+    image: apache/airflow:3.1.0
+    command: standalone
+    profiles: ["airflow"]
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags:ro
+      - airflow_data:/opt/airflow
 
 # ========================================
 # Persistent Volumes
 # ========================================
 volumes:
+  airflow_data:
   namenode_data:
   datanode_data:
   postgres_data:
