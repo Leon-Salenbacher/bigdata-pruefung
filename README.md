@@ -279,7 +279,13 @@ Die eigentliche Volltextsuche wird hierbei durch PostgreSQL durchgeführt. FastA
 Die in der Volltextsuche gefundenen Comics werden in einem JSON-Format an das Frontend zurückgegeben.
 Die Antwort enthält `query`, `page`, `limit`, `total` und die Liste `results`. Jeder Treffer enthält `id`, `title`, `alt`, `image_url`, `comic_url`, `year`, `month`, `day` und `relevance`.
 
-Durch die verwendung von JSON wird eine einfache weiterverarbeitung der Daten durch das React-Frontend ermöglicht. Zusätzlich ermöglicht die Trennung von Backend und Frontend die unabhängige weiterentwicklung der API und der Benutzerobefläche oder die integration in eine andere Anwendung. 
+Weitere Endpunkte:
+
+| Endpunkt | Zweck |
+| --- | --- |
+| `GET /api/health` | Prüft die Datenbankverbindung |
+| `GET /api/comics/search?q=data&page=1&limit=20` | Volltextsuche mit Seitennavigation |
+| `GET /api/comics/{comic_id}` | Einzelnen Comic abrufen; 404 bei fehlender ID |
 
 
 ### 7. Frontend - React
