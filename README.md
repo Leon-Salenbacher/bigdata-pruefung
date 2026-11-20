@@ -1,15 +1,58 @@
 # Big Data Practical Exam - XKCD Search Engine
 
-## DEMO 
-```
-docker compose --profile web up -d --wait
+## Demo
 
-docker compose run --rm -e XKCD_START_ID=1 -e XKCD_END_ID=10 xkcd-downloader
-docker compose run --rm hdfs-import
-docker compose run --rm xkcd-transform
-docker compose run --rm xkcd-postgres-export
-docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U xkcd -d xkcd < sql/merge_comics.sql
+### 1. Alle Dienste starten
+```powershell
+docker compose --profile web --profile airflow up -d --build
 ```
+
+
+Damit werden HDFS, PostgreSQL, das FastAPI-Backend und das React-Frontend gestartet.
+
+
+### 2. Bei Airflow anmelden
+Airflow unter ```http://localhost:8080``` öffnen.
+
+Benutzername: `admin`
+passwort: automatisch erzeugt => auslesen
+```powershell
+docker compose exec airflow python -c "import json; print(json.load(open('/opt/airflow/simple_auth_manager_passwords.json.generated'))['admin'])"
+```
+
+Falls Airflow noch nicht bereit ist, die Startlogs prüfen:
+
+```powershell
+docker compose logs --tail 100 airflow
+```
+
+
+### 3. Datenpipeline starten
+In der Airflow-Oberfläche:
+1. Den DAG `xkcd_pipeline` öffnen
+2. Den DAG ggf. aktivieren
+3. Über **Trigger DAG** durchlauf starten.
+
+Airflow führt die folgenden Schritte automatisch nacheinander aus:
+``download -> import_hdfs -> transform -> export_postgres -> merge_comics`
+
+### 4. Suchfunktion
+Im Frontend `http://localhost:3000` können jetzt suchen durchgeführt werden.
+
+Andere Oberflächen:
+* Airflow: `http://localhost:8080`
+* API-Dokumentation: `http://localhost:8000/docs`
+* HDFS NameNode: `http://localhost:9870`
+
+
+### 5. Demo beenden
+```powershell
+docker compose --profile web --profile airflow down
+```
+
+
+
+
 
 
 ## DOKU

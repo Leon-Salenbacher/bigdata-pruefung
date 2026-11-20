@@ -1,11 +1,10 @@
-from pathlib import Path
-
 import pendulum
 from airflow.sdk import DAG
 from airflow.providers.standard.operators.bash import BashOperator
 
 # xkcd_pipeline.py located in <repo>/airflow/dags/.
-REPO_DIR = str(Path(__file__).resolve().parents[2])
+REPO_DIR = "/opt/xkcd-project"
+COMPOSE = f"python {REPO_DIR}/airflow/run_compose.py"
 
 with DAG(
     dag_id = "xkcd_pipeline",
@@ -19,7 +18,7 @@ with DAG(
         task_id = "download",
         cwd=REPO_DIR,
         bash_command=(
-            "docker compose --profile download run --rm -T "
+            f"{COMPOSE} --profile download run --rm -T "
             "-e XKCD_START_ID=1 -e XKCD_END_ID=10 xkcd-downloader"
         )
     )
@@ -27,20 +26,20 @@ with DAG(
     import_hdfs = BashOperator(
         task_id = "import_hdfs",
         cwd=REPO_DIR,
-        bash_command = "docker compose --profile tools run --rm -T hdfs-import",
+        bash_command =f"{COMPOSE} --profile tools run --rm -T hdfs-import",
     )
 
     transform = BashOperator(
         task_id = "transform",
         cwd=REPO_DIR,
-        bash_command="docker compose --profile tools run --rm -T xkcd-transform",
+        bash_command=f"{COMPOSE} --profile tools run --rm -T xkcd-transform",
     )
 
     export_postgres = BashOperator(
         task_id="export_postgres",
         cwd=REPO_DIR,
         bash_command=(
-            "docker compose --profile tools run --rm -T xkcd-postgres-export"
+            f"{COMPOSE} --profile tools run --rm -T xkcd-postgres-export"
         ),
     )
 
@@ -48,7 +47,7 @@ with DAG(
         task_id="merge_comics",
         cwd=REPO_DIR,
         bash_command=(
-            "docker compose exec -T postgres "
+            f"{COMPOSE} exec -T postgres "
             "psql -v ON_ERROR_STOP=1 -U xkcd -d xkcd < sql/merge_comics.sql"
         ),
     )

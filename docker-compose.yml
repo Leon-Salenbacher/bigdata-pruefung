@@ -193,9 +193,13 @@ services:
   # ETL-Tool | Airflow
   # ========================================
   airflow:
-    image: apache/airflow:3.1.0
+    build:
+      context: ./airflow
+    image: xkcd-airflow:3.1.0
     command: standalone
     profiles: ["airflow"]
+    group_add:
+      - "${DOCKER_GID:-0}"
     environment:
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
     ports:
@@ -203,6 +207,8 @@ services:
     volumes:
       - ./airflow/dags:/opt/airflow/dags:ro
       - airflow_data:/opt/airflow
+      - .:/opt/xkcd-project:ro
+      - /var/run/docker.sock:/var/run/docker.sock
 
 # ========================================
 # Persistent Volumes
