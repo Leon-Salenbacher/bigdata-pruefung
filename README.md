@@ -113,13 +113,13 @@ Der Download erfolgt dabei mithilfe eines Python-Skripts, welches dabei die folg
 2. Iterieren über sämtliche Comic-IDs.
 3. Abrufen der zugehörigen JSON-Dokumente über HTTP-GET-Requests.
 4. Überprüfen der HTTP-Antworten und Behandlung möglicher Fehler .
-5. Speichern der erfolgreich abgerufenen JSON-Dokumente im HDFS.
+5. Speichern der erfolgreich abgerufenen JSON-Dokumente unter `data/raw/<Jahr>/`.
 
 Da nicht sichergestellt ist, das jede Comic-ID existiert, werden die HTTP-404-Antworten im skript berücksichtigt. Die aufgetretenen Fehlerhaften Requests, werden dabei Protokoliert und können im späteren verlauf nachvollzogen werden.
 
 
-Speicherung im HDFS Raw Layer 
-Die heruntergeladenen JSON-Dokumente werden anschließend vorerst im Raw Layer gespeichert. Somit können die ursprünglichen Daten erhalten bleiben und bei Bedarf erneut verarbeitet werden. 
+Speicherung im HDFS Raw Layer
+Der Task `import_hdfs` kopiert die lokal heruntergeladenen JSON-Dokumente in den HDFS Raw Layer. Er wartet dafür auf einen aktiven DataNode und das Ende des HDFS Safe Mode. Somit können die ursprünglichen Daten erhalten bleiben und bei Bedarf erneut verarbeitet werden.
 Die Speicherung erfolgt im anschluss anhand des Erscheinungsjahrs der einzelnen Comics.
 Eine Beispielhafte Verzeichnisstruktur könnte dabei folgender maßen aussehen:
 ```
@@ -137,14 +137,14 @@ Eine Beispielhafte Verzeichnisstruktur könnte dabei folgender maßen aussehen:
 Das jeweilige Erscheindungsjahr wird dabei aus dem Feld 'year' des jeweiligen JSON-Dokuemnts extrahiert.
 
 #### 3.2 Transform - Verarbeitung mit Apache Spark
-Im zweiten Schritt werden die gespeicherten Rohdaten von Apache Spark und dessen Python Schnittstelle PySpark verarbeitet.
+Im dritten DAG-Task (`transform`) werden die gespeicherten Rohdaten von Apache Spark und dessen Python Schnittstelle PySpark verarbeitet.
 Ziel bei dieser Transformation ist es, die ursprünglichen JSON-Dokumente in eine bereinigte und strukturierte Form zu übersetzen, die im späteren verlauf für die Volltextsuche verwendet werden kann.
 
 Für diesen Schritt weden die JSON-Dateien aus dem Raw Layer eingelesen und in einen Spark DataFrame umgewandelt.
 
 Die Transformation umfasst dabei die folgenden Schritte:
 1. Auswahl relevanter Attribute: Aus den JSON-Dokumenten werden die für die Suche und Darstellung benötigten Informationen extrahiert.
-2. Datentypkonvertierung: Das Erscheindungsdatum wird aus den Feldern 'year', 'month' und 'day' zusammengesetzt und in ein Datumstyp umgewandelt.
+2. Datentypkonvertierung: Comic-ID sowie `year`, `month` und `day` werden in Ganzzahlen umgewandelt. Ein separates Datumsfeld wird nicht erzeugt.
 3. Datenbereinigung: Fehlende oder leere Werte werden behandelt, um eine konsistete Datenstruktur sicherzustellen.
 4. Deduplizierung: Mögliche doppelte Einträge werden durch die eindeutige Comic-ID identifiziert und entfernt.
 5. Anreicherung: Auf basis der Comic-ID wird die URL zur jeweiligen XKCD-Webseite generiert.
