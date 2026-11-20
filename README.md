@@ -155,14 +155,15 @@ Nach der Transformation enthält jeder Comic einen strukturierten Datensatz mit 
 
 | Attribute | Datentyp | Beschreibung |
 | --- | --- | --- |
-| id | Integer | Endeutige Comic-ID | 
-| title | String | Titel des Comics | 
-| safe_title | String  | Bereinigter Titel | 
-| release_date | Date | Erscheinungsdatum | 
-| alt | String | Alternativtext | 
-| transcript | String | Transkript des Comics | 
-| image_url | String | URL des Comic-Bildes | 
-| comic_url | String | URL zur XKCD-Webseite | 
+| id | Integer | Endeutige Comic-ID |
+| title | String | Titel des Comics |
+| safe_title | String  | Bereinigter Titel |
+| year, month, day | Integer | Bestandteile des Erscheinungsdatums |
+| search_text | String | Kleingeschriebener Suchtext aus Titel, Alternativtext und Transkript |
+| alt | String | Alternativtext |
+| transcript | String | Transkript des Comics |
+| image_url | String | URL des Comic-Bildes |
+| comic_url | String | URL zur XKCD-Webseite |
 
 Diese bereitstellung eines einheitlichen Datenmodells, vereinfacht die spätere übertragung in die PostgreSQL-Datenbank.
 
